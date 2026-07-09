@@ -89,6 +89,8 @@ https://your-app.railway.app
 
 - **Framework**: FastAPI + Uvicorn
 - **Database**: PostgreSQL (auto-provisioned by Railway)
+- **Package Structure**: Source layout (`src/research_intel/`) with setuptools
+- **Build System**: Nixpacks with automatic package installation
 - **Data Sources**: 26 integrated sources (ArXiv, Semantic Scholar, OpenAlex, Papers with Code, GitHub, HuggingFace, NewsAPI, Apify, etc.)
 - **AI Engine**: OpenAI GPT-4 for analysis
 
@@ -111,6 +113,17 @@ Check Railway dashboard for:
 - Deployment status
 
 ## Troubleshooting
+
+### ModuleNotFoundError: No module named 'research_intel'
+This error occurs if the package isn't installed properly. **Fixed in latest version** with:
+- Added `[build-system]` to `pyproject.toml`
+- Created `nixpacks.toml` for proper Railway installation
+- Package is now installed with `pip install -e .` during build
+
+If you still see this error:
+1. Ensure you're using the latest commit from GitHub
+2. Trigger a rebuild on Railway (Settings → Redeploy)
+3. Check build logs for installation errors
 
 ### Build Fails
 - Check Railway build logs
