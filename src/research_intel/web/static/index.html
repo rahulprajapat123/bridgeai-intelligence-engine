@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Research Intelligence Platform</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Research Intelligence Platform</p>
+          <h1>Evidence-backed decision support</h1>
+          <p class="lede">Turn briefs and daily signals into clear recommendations, source-backed summaries, and newsletter-ready intelligence.</p>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <nav class="tabs" aria-label="Primary">
+          <button class="tab is-active" type="button" data-tab="analyze">Analyze Brief</button>
+          <button class="tab" type="button" data-tab="daily">Daily Intelligence</button>
+        </nav>
+
+        <section class="view is-visible" id="view-analyze" aria-labelledby="analyze-title">
+          <div class="section-heading">
+            <div>
+              <h2 id="analyze-title">Analyze Brief</h2>
+              <p>Upload or paste a business brief and generate an evidence-backed recommendation pack.</p>
+            </div>
+          </div>
+
+          <div class="layout-grid">
+            <form class="panel form-panel" id="analyze-form">
+              <label for="brief-file">Upload Brief: PDF, TXT, MD, DOCX</label>
+              <input id="brief-file" name="brief_file" type="file" accept=".pdf,.txt,.md,.docx" />
+
+              <label for="brief-text">Paste Brief</label>
+              <textarea id="brief-text" name="brief_text" rows="12" placeholder="Paste the brief, problem statement, RFP excerpt, or decision context here..."></textarea>
+
+              <div class="form-grid">
+                <label for="domain">Optional Domain</label>
+                <input id="domain" name="domain" list="domain-options" placeholder="e.g. AI, Marketing, Healthcare, Finance" />
+                <datalist id="domain-options">
+                  <option value="AI/ML"></option>
+                  <option value="Marketing"></option>
+                  <option value="Sales"></option>
+                  <option value="Insights and Analytics"></option>
+                  <option value="Customer Experience"></option>
+                  <option value="Market Intelligence"></option>
+                </datalist>
+
+                <label for="top-k">Top K Sources</label>
+                <input id="top-k" name="top_k" type="number" min="1" max="50" value="10" />
+              </div>
+
+              <fieldset class="source-options">
+                <legend>Sources to include</legend>
+                <label class="check"><input type="checkbox" name="include_papers" checked /> Include Papers</label>
+                <label class="check"><input type="checkbox" name="include_github" checked /> Include GitHub</label>
+                <label class="check"><input type="checkbox" name="include_blogs" checked /> Include Blogs</label>
+                <label class="check"><input type="checkbox" name="include_news" checked /> Include News</label>
+              </fieldset>
+
+              <button class="primary-action" type="submit">Analyze Brief</button>
+              <div class="status-message" id="analyze-status" role="status" aria-live="polite"></div>
+            </form>
+
+            <div class="output-stack" id="analyze-output">
+              <article class="result-card" data-card="brief_understanding"><h3>Brief Understanding</h3><div class="card-body empty">Results appear after analysis.</div></article>
+              <article class="result-card" data-card="extracted_requirements"><h3>Extracted Requirements</h3><div class="card-body empty">No requirements yet.</div></article>
+              <article class="result-card has-copy" data-card="recommended_solution"><div class="card-title-row"><h3>Recommended Solution</h3><button type="button" class="copy-button" data-copy-card="recommended_solution">Copy</button></div><div class="card-body empty">No recommendation yet.</div></article>
+              <article class="result-card" data-card="architecture"><h3>Architecture</h3><div class="card-body empty">No architecture yet.</div></article>
+              <article class="result-card" data-card="tools_technologies"><h3>Tools &amp; Technologies</h3><div class="card-body empty">No tools yet.</div></article>
+              <article class="result-card" data-card="implementation_plan"><h3>Implementation Plan</h3><div class="card-body empty">No plan yet.</div></article>
+              <article class="result-card" data-card="risks_mitigations"><h3>Risks &amp; Mitigations</h3><div class="card-body empty">No risks yet.</div></article>
+              <article class="result-card" data-card="similar_papers"><h3>Similar Papers</h3><div class="card-body empty">No papers yet.</div></article>
+              <article class="result-card" data-card="github_repositories"><h3>GitHub Repositories</h3><div class="card-body empty">No repositories yet.</div></article>
+              <article class="result-card" data-card="blogs_articles_news"><h3>Blogs / Articles / News</h3><div class="card-body empty">No articles yet.</div></article>
+              <article class="result-card wide" data-card="evidence_table"><h3>Evidence Table</h3><div class="card-body empty">No evidence yet.</div></article>
+              <article class="result-card wide" data-card="warnings"><h3>Warnings</h3><div class="card-body empty">No warnings yet.</div></article>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-daily" aria-labelledby="daily-title">
+          <div class="section-heading">
+            <div>
+              <h2 id="daily-title">Daily Intelligence</h2>
+              <p>Create a concise daily report and optional newsletter draft from the latest configured intelligence sources.</p>
+            </div>
+          </div>
+
+          <div class="layout-grid">
+            <form class="panel form-panel" id="daily-form">
+              <div class="form-grid">
+                <label for="recipient">Recipient Email</label>
+                <input id="recipient" name="recipient" type="email" placeholder="name@company.com" />
+
+                <label for="max-items">Max Items</label>
+                <input id="max-items" name="max_items" type="number" min="1" max="200" value="20" />
+              </div>
+
+              <fieldset class="topic-options">
+                <legend>Topics</legend>
+                <label class="chip"><input type="checkbox" name="topics" value="AI in Marketing" checked /> AI in Marketing</label>
+                <label class="chip"><input type="checkbox" name="topics" value="AI in Sales" checked /> AI in Sales</label>
+                <label class="chip"><input type="checkbox" name="topics" value="AI in Insights and Analytics" checked /> AI in Insights and Analytics</label>
+                <label class="chip"><input type="checkbox" name="topics" value="Agentic AI" checked /> Agentic AI</label>
+                <label class="chip"><input type="checkbox" name="topics" value="LLMs" checked /> LLMs</label>
+                <label class="chip"><input type="checkbox" name="topics" value="RAG" checked /> RAG</label>
+                <label class="chip"><input type="checkbox" name="topics" value="OpenAI" checked /> OpenAI</label>
+                <label class="chip"><input type="checkbox" name="topics" value="Claude" /> Claude</label>
+                <label class="chip"><input type="checkbox" name="topics" value="Gemini" /> Gemini</label>
+                <label class="chip"><input type="checkbox" name="topics" value="AI Automation" checked /> AI Automation</label>
+                <label class="chip"><input type="checkbox" name="topics" value="Customer Experience Analytics" /> Customer Experience Analytics</label>
+                <label class="chip"><input type="checkbox" name="topics" value="Market Intelligence" /> Market Intelligence</label>
+              </fieldset>
+
+              <label class="check"><input type="checkbox" name="send_email" /> Send Email</label>
+              <button class="primary-action" type="submit">Generate Report</button>
+              <div class="status-message" id="daily-status" role="status" aria-live="polite"></div>
+            </form>
+
+            <div class="output-stack" id="daily-output">
+              <article class="result-card" data-card="executive_summary"><h3>Executive Summary</h3><div class="card-body empty">Report appears after generation.</div></article>
+              <article class="result-card" data-card="top_developments"><h3>Top Developments</h3><div class="card-body empty">No developments yet.</div></article>
+              <article class="result-card" data-card="marketing_ai"><h3>Marketing AI</h3><div class="card-body empty">No updates yet.</div></article>
+              <article class="result-card" data-card="sales_ai"><h3>Sales AI</h3><div class="card-body empty">No updates yet.</div></article>
+              <article class="result-card" data-card="insights_analytics"><h3>Insights / Analytics</h3><div class="card-body empty">No updates yet.</div></article>
+              <article class="result-card" data-card="agentic_llm_rag"><h3>Agentic AI, LLM and RAG</h3><div class="card-body empty">No updates yet.</div></article>
+              <article class="result-card" data-card="important_papers"><h3>Important Papers</h3><div class="card-body empty">No papers yet.</div></article>
+              <article class="result-card" data-card="useful_github_repositories"><h3>Useful GitHub Repositories</h3><div class="card-body empty">No repositories yet.</div></article>
+              <article class="result-card has-copy" data-card="newsletter_angles"><h3>Newsletter Angles</h3><div class="card-body empty">No angles yet.</div></article>
+              <article class="result-card has-copy" data-card="newsletter_draft"><div class="card-title-row"><h3>Newsletter Draft</h3><button type="button" class="copy-button" data-copy-card="newsletter_draft">Copy</button></div><div class="card-body empty">No draft yet.</div></article>
+              <article class="result-card wide" data-card="source_table"><h3>Source Table</h3><div class="card-body empty">No sources yet.</div></article>
+              <article class="result-card" data-card="email_status"><h3>Email Status</h3><div class="card-body empty">Email has not been sent.</div></article>
+              <article class="result-card wide" data-card="daily_warnings"><h3>Warnings</h3><div class="card-body empty">No warnings yet.</div></article>
+            </div>
+          </div>
+        </section>
+
+        <details class="developer-details" id="developer-details">
+          <summary>Developer Details</summary>
+          <pre id="debug-output">No debug information yet.</pre>
+        </details>
+      </main>
+    </div>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

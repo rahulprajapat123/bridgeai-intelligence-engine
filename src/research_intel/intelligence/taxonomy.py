@@ -1,0 +1,207 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class DomainDefinition:
+    key: str
+    label: str
+    hierarchy: tuple[str, ...]
+    keywords: tuple[str, ...]
+    source_routes: tuple[str, ...]
+    query_expansions: tuple[str, ...]
+
+
+DOMAIN_DEFINITIONS: dict[str, DomainDefinition] = {
+    "ai_ml": DomainDefinition(
+        key="ai_ml",
+        label="AI/ML",
+        hierarchy=("Technology", "AI/ML", "RAG and Retrieval"),
+        keywords=(
+            "rag",
+            "retrieval augmented generation",
+            "embedding",
+            "vector search",
+            "dense retrieval",
+            "reranking",
+            "llm",
+            "language model",
+            "chunking",
+            "semantic search",
+            "openai",
+            "anthropic",
+            "gemini",
+            "claude",
+            "llama",
+        ),
+        source_routes=(
+            "arxiv",
+            "semantic_scholar",
+            "openalex",
+            "huggingface",
+            "github",
+            "exa",
+            "tavily",
+            "technical_blogs",
+        ),
+        query_expansions=(
+            "retrieval augmented generation benchmark",
+            "hybrid retrieval reranking evaluation",
+            "RAG chunking embedding model comparison",
+        ),
+    ),
+    "competitive_intelligence": DomainDefinition(
+        key="competitive_intelligence",
+        label="Competitive Intelligence",
+        hierarchy=("Business Research", "Competitive Intelligence"),
+        keywords=(
+            "competitive benchmark",
+            "competitor",
+            "market landscape",
+            "positioning",
+            "share of voice",
+            "g2 reviews",
+            "gartner peer insights",
+            "adbeat",
+            "brightedge",
+            "sprinklr",
+            "search analytics",
+            "social listening",
+            "benchmarking",
+            "market research",
+        ),
+        source_routes=("newsapi", "gnews", "guardian", "nytimes", "serper", "exa", "tavily", "apify"),
+        query_expansions=(
+            "competitive benchmarking framework",
+            "market research evidence sources",
+            "share of voice search social analytics benchmark",
+        ),
+    ),
+    "partner_programs": DomainDefinition(
+        key="partner_programs",
+        label="Partner Programs",
+        hierarchy=("Business Research", "Competitive Intelligence", "Partner Ecosystem Analysis"),
+        keywords=(
+            "partner program",
+            "partner ecosystem",
+            "partner alliance",
+            "channel program",
+            "channel partner",
+            "mdf",
+            "market development funds",
+            "co-marketing",
+            "deal registration",
+            "enablement",
+            "training",
+            "tiering",
+            "reseller",
+            "distributor",
+            "partner portal",
+            "audience matrix",
+            "nvidia partner",
+            "microsoft partner",
+            "amd partner",
+            "intel partner",
+        ),
+        source_routes=("serper", "exa", "tavily", "newsapi", "gnews", "firecrawl", "apify"),
+        query_expansions=(
+            "Intel Partner Alliance Microsoft AI Cloud Partner Program Nvidia partner network AMD partner program",
+            "partner program MDF enablement deal registration benchmark",
+            "channel program competitive analysis CRN Channel Futures Channelnomics",
+        ),
+    ),
+    "market_research": DomainDefinition(
+        key="market_research",
+        label="Market Research",
+        hierarchy=("Business Research", "Market Research"),
+        keywords=(
+            "customer segment",
+            "survey",
+            "buyer persona",
+            "market size",
+            "tam",
+            "sam",
+            "som",
+            "voice of customer",
+            "sentiment",
+            "pricing study",
+            "audience analysis",
+        ),
+        source_routes=("newsapi", "gnews", "guardian", "nytimes", "serper", "exa", "tavily", "apify"),
+        query_expansions=(
+            "market research methodology competitive benchmark",
+            "customer sentiment audience analysis benchmark",
+        ),
+    ),
+    "developer_tooling": DomainDefinition(
+        key="developer_tooling",
+        label="Developer Tooling",
+        hierarchy=("Technology", "Developer Tooling"),
+        keywords=(
+            "repository",
+            "github",
+            "sdk",
+            "api",
+            "cli",
+            "developer tool",
+            "code intelligence",
+            "ci/cd",
+            "static analysis",
+            "ide",
+        ),
+        source_routes=("github", "serper", "exa", "tavily", "technical_blogs", "apify"),
+        query_expansions=("developer tooling benchmark", "repository search code intelligence"),
+    ),
+    "healthcare": DomainDefinition(
+        key="healthcare",
+        label="Healthcare",
+        hierarchy=("Industry", "Healthcare"),
+        keywords=("clinical", "medical", "patient", "ehr", "provider", "healthcare", "diagnosis"),
+        source_routes=("openalex", "semantic_scholar", "newsapi", "serper"),
+        query_expansions=("clinical evidence review", "healthcare research benchmark"),
+    ),
+    "finance": DomainDefinition(
+        key="finance",
+        label="Finance",
+        hierarchy=("Industry", "Finance"),
+        keywords=("banking", "risk model", "portfolio", "trading", "credit", "financial", "fintech"),
+        source_routes=("newsapi", "gnews", "serper", "exa", "tavily", "apify"),
+        query_expansions=("financial services benchmark", "risk analysis market research"),
+    ),
+    "legal": DomainDefinition(
+        key="legal",
+        label="Legal",
+        hierarchy=("Industry", "Legal"),
+        keywords=("contract", "legal", "clause", "case law", "law firm", "regulatory", "compliance"),
+        source_routes=("openalex", "semantic_scholar", "serper", "exa", "tavily", "apify"),
+        query_expansions=("legal document retrieval benchmark", "contract analysis RAG precision"),
+    ),
+    "general": DomainDefinition(
+        key="general",
+        label="General Research",
+        hierarchy=("General Research",),
+        keywords=(),
+        source_routes=("serper", "exa", "tavily", "newsapi", "openalex", "apify"),
+        query_expansions=("evidence review", "benchmark report"),
+    ),
+}
+
+
+ROUTE_TO_SOURCE_TYPES: dict[str, tuple[str, ...]] = {
+    "arxiv": ("academic",),
+    "semantic_scholar": ("academic",),
+    "openalex": ("academic",),
+    "huggingface": ("industry", "code"),
+    "github": ("code",),
+    "technical_blogs": ("industry", "blog", "vendor"),
+    "newsapi": ("news",),
+    "gnews": ("news",),
+    "guardian": ("news",),
+    "nytimes": ("news",),
+    "serper": ("web", "news"),
+    "exa": ("web", "academic", "industry"),
+    "tavily": ("web", "news"),
+    "firecrawl": ("web",),
+    "apify": ("web", "private"),
+}

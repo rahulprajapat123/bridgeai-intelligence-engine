@@ -1,0 +1,42 @@
+[
+  {
+    "title": "Hybrid Retrieval Benchmark",
+    "source_url": "https://example.org/hybrid",
+    "source_type": "academic",
+    "source_name": "Example",
+    "text": "A benchmark found that hybrid retrieval improved recall by +18% on question answering. However, reranking added 240ms latency under production traffic.",
+    "domain": "AI_ML",
+    "expected_metric": "+18%",
+    "expected_tag": "retrieval"
+  },
+  {
+    "title": "Partner Program Analysis",
+    "source_url": "https://example.org/partner",
+    "source_type": "web",
+    "source_name": "Example",
+    "text": "The case study reported that stronger enablement and deal registration improved partner response rates by 12% for distributors.",
+    "domain": "PARTNER_ECOSYSTEM",
+    "expected_metric": "12%",
+    "expected_tag": "business_research"
+  },
+  {
+    "title": "Legal QA Evaluation",
+    "source_url": "https://example.org/legal",
+    "source_type": "academic",
+    "source_name": "Example",
+    "text": "The evaluation showed citation-grounded legal contract QA improved precision by 9 points, but limited coverage on scanned annexes remained a risk.",
+    "domain": "LEGAL",
+    "expected_metric": "9 points",
+    "expected_tag": "evaluation"
+  },
+  {
+    "title": "Healthcare Workflow Study",
+    "source_url": "https://example.org/health",
+    "source_type": "academic",
+    "source_name": "Example",
+    "text": "An experiment reduced triage documentation time by 15% when providers used structured prompts in the intake workflow.",
+    "domain": "HEALTHCARE",
+    "expected_metric": "15%",
+    "expected_tag": "healthcare"
+  }
+]

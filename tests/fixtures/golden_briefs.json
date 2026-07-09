@@ -1,0 +1,74 @@
+[
+  {
+    "id": "rag_technical",
+    "text": "Build a RAG assistant for 50K PDFs with hybrid retrieval, chunking, embeddings, reranking, evaluation metrics, and answer citations. Recommend architecture, tooling, latency tradeoffs, and implementation risks.",
+    "primary_domain": "AI_ML",
+    "required_routes": ["arxiv", "semantic_scholar", "openalex"],
+    "forbidden_routes": ["guardian", "nytimes"]
+  },
+  {
+    "id": "intel_partner_program",
+    "text": "Analyze Intel Partner Alliance against Microsoft, Nvidia, and AMD. Cover partner program benefits, MDF, enablement, training, deal registration, audience matrix, BrightEdge search analytics, Sprinklr social listening, and competitive benchmarking.",
+    "primary_domain": "PARTNER_ECOSYSTEM",
+    "secondary_domains": ["COMPETITIVE_INTELLIGENCE", "MARKET_RESEARCH"],
+    "required_routes": ["serper", "exa", "apify"],
+    "forbidden_routes": ["arxiv", "semantic_scholar"]
+  },
+  {
+    "id": "developer_tooling_sdk",
+    "text": "Research developer tooling for API observability SDKs, CLI workflows, GitHub repositories, changelogs, package ecosystems, and documentation quality. Compare implementation tradeoffs for engineering teams.",
+    "primary_domain": "DEVELOPER_TOOLING",
+    "required_routes": ["github", "serper", "exa"],
+    "forbidden_routes": ["semantic_scholar"]
+  },
+  {
+    "id": "market_research_buyer_persona",
+    "text": "Create buyer personas, customer segment analysis, TAM and pricing insights, review sentiment, and audience research for a B2B SaaS launch. Include survey evidence and market sizing assumptions.",
+    "primary_domain": "MARKET_RESEARCH",
+    "required_routes": ["newsapi", "gnews", "serper"],
+    "forbidden_routes": ["arxiv"]
+  },
+  {
+    "id": "competitive_landscape",
+    "text": "Map competitor positioning, share of voice, G2 review themes, pricing signals, and product launch announcements for a workflow automation vendor. Deliver a competitive intelligence benchmark.",
+    "primary_domain": "COMPETITIVE_INTELLIGENCE",
+    "required_routes": ["guardian", "nytimes", "serper"],
+    "forbidden_routes": ["semantic_scholar"]
+  },
+  {
+    "id": "legal_contract_qa",
+    "text": "Recommend a legal contract analysis and retrieval workflow for enterprise agreements with strict citation traceability, compliance review, clause extraction, and low hallucination tolerance.",
+    "primary_domain": "LEGAL",
+    "required_routes": ["openalex", "semantic_scholar", "serper"],
+    "forbidden_routes": ["github"]
+  },
+  {
+    "id": "healthcare_clinical_review",
+    "text": "Summarize clinical evidence on patient triage support, diagnosis documentation, and provider workflow improvements. Use trusted journals, medical studies, and healthcare research only.",
+    "primary_domain": "HEALTHCARE",
+    "required_routes": ["openalex", "semantic_scholar"],
+    "forbidden_routes": ["github"]
+  },
+  {
+    "id": "finance_risk_analysis",
+    "text": "Research portfolio risk models, credit exposure reporting, and fintech competitor analysis. Compare recent market signals with evidence from finance sources and business reporting.",
+    "primary_domain": "FINANCE",
+    "required_routes": ["newsapi", "gnews", "exa"],
+    "forbidden_routes": ["arxiv"]
+  },
+  {
+    "id": "general_business_strategy",
+    "text": "Prepare a general business research brief on expansion strategy, partnerships, customer demand, and pricing pressure in a new region. No AI system design is needed.",
+    "primary_domain": "GENERAL_BUSINESS",
+    "required_routes": ["serper", "exa", "newsapi"],
+    "forbidden_routes": ["arxiv", "semantic_scholar"]
+  },
+  {
+    "id": "non_ai_business_with_vendor_mentions",
+    "text": "Assess channel strategy, reseller incentives, and enablement content for a hardware vendor. The brief mentions OpenAI and Gemini as examples of partner messaging trends, but the deliverable is a business program comparison.",
+    "primary_domain": "PARTNER_ECOSYSTEM",
+    "secondary_domains": ["COMPETITIVE_INTELLIGENCE"],
+    "required_routes": ["serper", "apify"],
+    "forbidden_routes": ["arxiv", "semantic_scholar"]
+  }
+]
