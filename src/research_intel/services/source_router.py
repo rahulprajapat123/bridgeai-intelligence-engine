@@ -40,14 +40,15 @@ DOMAIN_SOURCE_ROUTING: dict[str, list[str]] = {
 SOURCE_ALIASES: dict[str, set[str]] = {
     "news": {"newsapi", "gnews", "google_news_rss", "serpapi_news", "guardian", "nytimes", "apify_news"},
     "papers": {"semantic_scholar", "openalex", "arxiv", "paperswithcode"},
-    "social": {"apify_reddit", "apify_twitter"},
+    "social": {"apify_reddit", "stackexchange"},
+    "stackexchange": {"stackexchange"},
     "video": {"apify_youtube"},
-    "technical_blogs": {"exa", "tavily", "serper", "firecrawl", "apify"},
-    "industry_blogs": {"exa", "tavily", "serper", "firecrawl", "apify"},
-    "martech_blogs": {"exa", "tavily", "serper", "firecrawl", "apify"},
-    "sales_tech_blogs": {"exa", "tavily", "serper", "firecrawl", "apify"},
-    "analytics_blogs": {"exa", "tavily", "serper", "firecrawl", "apify"},
-    "case_studies": {"exa", "tavily", "serper", "firecrawl"},
+    "technical_blogs": {"exa", "tavily", "serper", "apify"},
+    "industry_blogs": {"exa", "tavily", "serper", "apify"},
+    "martech_blogs": {"exa", "tavily", "serper", "apify"},
+    "sales_tech_blogs": {"exa", "tavily", "serper", "apify"},
+    "analytics_blogs": {"exa", "tavily", "serper", "apify"},
+    "case_studies": {"exa", "tavily", "serper"},
     "market_sources": {"newsapi", "gnews", "google_news_rss", "serpapi_news", "exa", "tavily", "serper"},
     "arxiv": {"arxiv"},
     "github": {"github"},
@@ -81,9 +82,9 @@ class SourceRouter:
         if include_papers:
             routes.extend(["semantic_scholar", "openalex", "arxiv"])
         if include_github:
-            routes.append("github")
+            routes.extend(["github", "npm"])
         if include_blogs:
-            routes.extend(["exa", "tavily", "serper", "firecrawl"])
+            routes.extend(["exa", "tavily", "serper", "hackernews", "devto", "rss"])
         if include_news:
             routes.extend(["newsapi", "gnews", "google_news_rss", "serpapi_news", "guardian", "nytimes"])
 

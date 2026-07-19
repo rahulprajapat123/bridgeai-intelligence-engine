@@ -11,27 +11,15 @@ from sqlalchemy.orm import Session
 from research_intel.config import Settings
 from research_intel.ingestion.base import FetchResult, RawDocument, SourcePolicy
 from research_intel.ingestion.clients import build_clients
+from research_intel.intelligence_scope import DEFAULT_DAILY_TOPICS, query_for_route, relevance_score
 from research_intel.intelligence.credibility import CredibilityScorer
-from research_intel.models import DailyIntelligenceReport, now_utc
+from research_intel.models import DailyIntelligenceReport, ResearchItem, now_utc
 from research_intel.services.email_service import NewsletterEmailService
 from research_intel.services.newsletter_builder import NewsletterBuilder
 from research_intel.utils import parse_year, stable_id, tokenize, unique_keep_order
 
 
-DEFAULT_TOPICS = [
-    "AI in Marketing",
-    "AI in Sales",
-    "AI in Insights and Analytics",
-    "Agentic AI",
-    "LLMs",
-    "RAG",
-    "OpenAI",
-    "Claude",
-    "Gemini",
-    "AI automation",
-    "Market intelligence",
-    "Customer experience analytics",
-]
+DEFAULT_TOPICS = list(DEFAULT_DAILY_TOPICS)
 
 PRODUCT_UPDATE_QUERIES = [
     "OpenAI latest product updates marketing sales analytics",
@@ -68,8 +56,34 @@ class DailyIntelligenceService:
         warnings: list[str] = []
         queries = self._queries(selected_topics)
         documents = await self._fetch_latest(queries, max_items=max_items, warnings=warnings)
+        # Retain already-ingested evidence as a first-class source. This keeps
+        # scheduled reports useful when external connectors are unavailable and
+        # preserves research gathered by earlier workflows.
+        stored = session.query(ResearchItem).order_by(ResearchItem.ingestion_date.desc()).limit(max_items).all()
+        stored_documents = [
+            RawDocument(
+                title=row.title,
+                source_url=row.source_url,
+                source_type=row.source_type,
+                source_name=row.source_name,
+                text=row.raw_text,
+                publication_date=row.publication_date.isoformat() if row.publication_date else None,
+                metadata={"stored_research_id": row.research_id},
+            )
+            for row in stored
+        ]
+        documents.extend(stored_documents)
         ranked = self._rank(self._dedupe(documents), selected_topics)[:max_items]
         report = self.builder.build(topics=selected_topics, ranked_items=ranked, max_items=max_items)
+        stored_papers = [
+            self._item(document, set(tokenize(" ".join(selected_topics))))
+            for document in stored_documents if document.source_type == "academic"
+        ]
+        stored_titles = {item["title"] for item in stored_papers}
+        papers = report["important_papers"]
+        report["latest_research_papers"] = stored_papers + [
+            item for item in papers if item["title"] not in stored_titles
+        ]
         if not ranked:
             warnings.append("No sources found; newsletter draft was not generated from external evidence.")
         if not self.settings.openai_api_key:
@@ -194,13 +208,7 @@ class DailyIntelligenceService:
         }
 
     def _query_for_client(self, route_name: str, queries: list[str]) -> str:
-        if route_name in {"semantic_scholar", "openalex", "arxiv"}:
-            return "RAG LLM application latest research agentic AI analytics"
-        if route_name == "github":
-            return "AI marketing sales analytics automation RAG LLM"
-        if route_name in {"exa", "tavily", "serper", "firecrawl", "apify"}:
-            return "latest AI marketing sales analytics OpenAI Claude Gemini product updates"
-        return queries[0]
+        return query_for_route(route_name, queries)
 
     def _dedupe(self, documents: list[RawDocument]) -> list[RawDocument]:
         seen: set[str] = set()
@@ -222,8 +230,7 @@ class DailyIntelligenceService:
     def _item(self, document: RawDocument, topic_terms: set[str]) -> dict:
         text = f"{document.title} {document.text}".strip()
         lowered = text.lower()
-        doc_terms = set(tokenize(text))
-        relevance = min(32.0, len(topic_terms & doc_terms) * 2.4)
+        relevance = min(32.0, relevance_score(text) * 0.32)
         authority = self.scorer.score_with_breakdown(document, [])["source_authority"]
         recency = self._recency(document)
         business = self._business_score(lowered)

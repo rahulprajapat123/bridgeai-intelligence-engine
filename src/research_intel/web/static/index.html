@@ -20,6 +20,7 @@
         <nav class="tabs" aria-label="Primary">
           <button class="tab is-active" type="button" data-tab="analyze">Analyze Brief</button>
           <button class="tab" type="button" data-tab="daily">Daily Intelligence</button>
+          <button class="tab" type="button" data-tab="filter">Signal Filter</button>
         </nav>
 
         <section class="view is-visible" id="view-analyze" aria-labelledby="analyze-title">
@@ -70,6 +71,7 @@
               <article class="result-card" data-card="brief_understanding"><h3>Brief Understanding</h3><div class="card-body empty">Results appear after analysis.</div></article>
               <article class="result-card" data-card="extracted_requirements"><h3>Extracted Requirements</h3><div class="card-body empty">No requirements yet.</div></article>
               <article class="result-card has-copy" data-card="recommended_solution"><div class="card-title-row"><h3>Recommended Solution</h3><button type="button" class="copy-button" data-copy-card="recommended_solution">Copy</button></div><div class="card-body empty">No recommendation yet.</div></article>
+              <article class="result-card" data-card="ranked_recommendations"><h3>Evidence-Backed Recommendations</h3><div class="card-body empty">No recommendations yet.</div></article>
               <article class="result-card" data-card="architecture"><h3>Architecture</h3><div class="card-body empty">No architecture yet.</div></article>
               <article class="result-card" data-card="tools_technologies"><h3>Tools &amp; Technologies</h3><div class="card-body empty">No tools yet.</div></article>
               <article class="result-card" data-card="implementation_plan"><h3>Implementation Plan</h3><div class="card-body empty">No plan yet.</div></article>
@@ -87,55 +89,100 @@
           <div class="section-heading">
             <div>
               <h2 id="daily-title">Daily Intelligence</h2>
-              <p>Create a concise daily report and optional newsletter draft from the latest configured intelligence sources.</p>
+              <p>Collect, review, approve, and export source-driven intelligence with full provenance.</p>
+            </div>
+          </div>
+          <div class="panel daily-toolbar">
+            <div><label for="daily-batch">Batch</label><select id="daily-batch"><option value="">No batches yet</option></select></div>
+            <div class="batch-state"><span id="daily-batch-status" class="status-pill">No batch selected</span></div>
+            <button id="daily-run" class="primary-action" type="button">Run Daily Intelligence</button>
+            <button id="daily-submit" type="button">Submit Review</button>
+            <button id="daily-export" type="button">Download Current Run PDF</button>
+            <button id="daily-export-all" type="button">Download All Data PDF</button>
+          </div>
+          <div class="status-message" id="daily-status" role="status" aria-live="polite"></div>
+          <section class="panel health-panel"><div class="card-title-row"><h3>Source Health</h3><button id="refresh-health" type="button">Refresh</button></div><div id="source-health" class="health-grid"><div class="empty">No source checks yet.</div></div></section>
+          <div class="panel daily-filters">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <p style="margin: 0; flex: 1; color: #666;">✓ Items are auto-approved by default. Review and reject any that don't meet quality standards.</p>
+              <button id="daily-check-pending" type="button" style="background: #ffa500; color: white;">Check Pending Count</button>
+              <button id="daily-approve-all" type="button" style="background: #28a745; color: white;">Approve All Pending</button>
+              <button id="daily-bulk-reject" type="button" style="background: #dc3545; color: white;">Reject Selected</button>
+            </div>
+          </div>
+          <div class="daily-tabs" role="tablist">
+            <button class="source-tab is-active" data-source-type="academic">Academic</button><button class="source-tab" data-source-type="code">Code</button><button class="source-tab" data-source-type="news">News</button><button class="source-tab" data-source-type="blog">Blogs</button><button class="source-tab" data-source-type="web">Web</button><button class="source-tab" data-source-type="social">Social</button>
+          </div>
+          <section class="panel source-overview" id="source-overview"></section>
+          <div id="daily-items" class="review-list"><div class="panel empty">Select or run a batch to begin review.</div></div>
+          <div class="pagination"><button id="daily-prev" type="button">Previous</button><span id="daily-page">Page 1</span><button id="daily-next" type="button">Next</button></div>
+          <dialog id="summary-dialog"><form method="dialog"><button class="dialog-close">Close</button></form><h3 id="dialog-title"></h3><textarea id="dialog-summary" rows="12"></textarea><textarea id="dialog-notes" rows="3" placeholder="Reviewer notes"></textarea><div class="dialog-actions"><button id="dialog-save" type="button">Save edit</button><button id="dialog-restore" type="button">Restore original</button></div><details><summary>Raw content and metadata</summary><pre id="dialog-raw"></pre></details></dialog>
+        </section>
+
+        <section class="view" id="view-filter" aria-labelledby="filter-title">
+          <div class="section-heading">
+            <div>
+              <h2 id="filter-title">Signal Filter</h2>
+              <p>Upload Daily Intelligence PDF and apply filters to refine to high-quality signals only.</p>
             </div>
           </div>
 
           <div class="layout-grid">
-            <form class="panel form-panel" id="daily-form">
-              <div class="form-grid">
-                <label for="recipient">Recipient Email</label>
-                <input id="recipient" name="recipient" type="email" placeholder="name@company.com" />
+            <form class="panel form-panel" id="filter-form">
+              <label for="filter-batch">Select Batch to Filter</label>
+              <select id="filter-batch">
+                <option value="">Loading batches...</option>
+              </select>
+              <p class="empty small" style="margin-top: 8px;">
+                💡 <strong>Tip:</strong> Only submitted/approved batches appear here. 
+                Go to <strong>Daily Intelligence</strong> → Run batch → Click <strong>"Approve All Pending"</strong> → Click <strong>"Submit Review"</strong> to make a batch available for filtering.
+              </p>
 
-                <label for="max-items">Max Items</label>
-                <input id="max-items" name="max_items" type="number" min="1" max="200" value="20" />
-              </div>
-
-              <fieldset class="topic-options">
-                <legend>Topics</legend>
-                <label class="chip"><input type="checkbox" name="topics" value="AI in Marketing" checked /> AI in Marketing</label>
-                <label class="chip"><input type="checkbox" name="topics" value="AI in Sales" checked /> AI in Sales</label>
-                <label class="chip"><input type="checkbox" name="topics" value="AI in Insights and Analytics" checked /> AI in Insights and Analytics</label>
-                <label class="chip"><input type="checkbox" name="topics" value="Agentic AI" checked /> Agentic AI</label>
-                <label class="chip"><input type="checkbox" name="topics" value="LLMs" checked /> LLMs</label>
-                <label class="chip"><input type="checkbox" name="topics" value="RAG" checked /> RAG</label>
-                <label class="chip"><input type="checkbox" name="topics" value="OpenAI" checked /> OpenAI</label>
-                <label class="chip"><input type="checkbox" name="topics" value="Claude" /> Claude</label>
-                <label class="chip"><input type="checkbox" name="topics" value="Gemini" /> Gemini</label>
-                <label class="chip"><input type="checkbox" name="topics" value="AI Automation" checked /> AI Automation</label>
-                <label class="chip"><input type="checkbox" name="topics" value="Customer Experience Analytics" /> Customer Experience Analytics</label>
-                <label class="chip"><input type="checkbox" name="topics" value="Market Intelligence" /> Market Intelligence</label>
+              <fieldset class="filter-settings">
+                <legend>Filter Settings</legend>
+                
+                <label for="novelty-threshold">Novelty Threshold (0-10, optional)</label>
+                <input id="novelty-threshold" name="novelty_threshold" type="number" min="0" max="10" step="0.5" value="0" />
+                
+                <label for="relevance-threshold">Relevance Score (0-100)</label>
+                <input id="relevance-threshold" name="relevance_threshold" type="number" min="0" max="100" step="5" value="0" />
+                
+                <label for="max-items">Maximum Items per Section (5-20)</label>
+                <input id="max-items" name="max_items" type="number" min="5" max="20" step="1" value="20" />
+                
+                <label class="check"><input type="checkbox" name="enable_clustering" checked /> Enable Clustering (group similar items)</label>
+                <label class="check"><input type="checkbox" name="enable_qa" checked /> Enable QA Checks (remove generic content)</label>
               </fieldset>
 
-              <label class="check"><input type="checkbox" name="send_email" /> Send Email</label>
-              <button class="primary-action" type="submit">Generate Report</button>
-              <div class="status-message" id="daily-status" role="status" aria-live="polite"></div>
+              <button class="primary-action" type="submit">Apply Signal Filter</button>
+              <div class="status-message" id="filter-status" role="status" aria-live="polite"></div>
             </form>
 
-            <div class="output-stack" id="daily-output">
-              <article class="result-card" data-card="executive_summary"><h3>Executive Summary</h3><div class="card-body empty">Report appears after generation.</div></article>
-              <article class="result-card" data-card="top_developments"><h3>Top Developments</h3><div class="card-body empty">No developments yet.</div></article>
-              <article class="result-card" data-card="marketing_ai"><h3>Marketing AI</h3><div class="card-body empty">No updates yet.</div></article>
-              <article class="result-card" data-card="sales_ai"><h3>Sales AI</h3><div class="card-body empty">No updates yet.</div></article>
-              <article class="result-card" data-card="insights_analytics"><h3>Insights / Analytics</h3><div class="card-body empty">No updates yet.</div></article>
-              <article class="result-card" data-card="agentic_llm_rag"><h3>Agentic AI, LLM and RAG</h3><div class="card-body empty">No updates yet.</div></article>
-              <article class="result-card" data-card="important_papers"><h3>Important Papers</h3><div class="card-body empty">No papers yet.</div></article>
-              <article class="result-card" data-card="useful_github_repositories"><h3>Useful GitHub Repositories</h3><div class="card-body empty">No repositories yet.</div></article>
-              <article class="result-card has-copy" data-card="newsletter_angles"><h3>Newsletter Angles</h3><div class="card-body empty">No angles yet.</div></article>
-              <article class="result-card has-copy" data-card="newsletter_draft"><div class="card-title-row"><h3>Newsletter Draft</h3><button type="button" class="copy-button" data-copy-card="newsletter_draft">Copy</button></div><div class="card-body empty">No draft yet.</div></article>
-              <article class="result-card wide" data-card="source_table"><h3>Source Table</h3><div class="card-body empty">No sources yet.</div></article>
-              <article class="result-card" data-card="email_status"><h3>Email Status</h3><div class="card-body empty">Email has not been sent.</div></article>
-              <article class="result-card wide" data-card="daily_warnings"><h3>Warnings</h3><div class="card-body empty">No warnings yet.</div></article>
+            <div class="output-stack" id="filter-output">
+              <article class="result-card" data-card="filter-summary">
+                <h3>Filter Results</h3>
+                <div class="card-body empty">Apply filter to see results.</div>
+              </article>
+
+              <article class="result-card" data-card="filter-actions">
+                <h3>Export</h3>
+                <div class="card-body">
+                  <button id="download-filtered-pdf" type="button" disabled>Download Filtered PDF</button>
+                  <button id="generate-editorial-brief" type="button" disabled>Editorial Ready Brief</button>
+                  <button id="download-editorial-brief" type="button" disabled>Download Editorial Brief PDF</button>
+                  <p class="empty small">Apply filter first to enable download.</p>
+                </div>
+              </article>
+
+              <article class="result-card wide" data-card="filtered-items">
+                <h3>Filtered Signals</h3>
+                <div class="card-body empty">No signals yet.</div>
+              </article>
+
+              <article class="result-card wide" data-card="editorial-brief">
+                <h3>Editorial Ready Brief</h3>
+                <div class="card-body empty">Generate a filtered set first, then create the newsletter brief.</div>
+              </article>
             </div>
           </div>
         </section>

@@ -1,0 +1,305 @@
+{
+  "batch_id": "eb6454ed39cef98fc341d5f3d9e76c2a",
+  "status": "awaiting_review",
+  "fetched": 102,
+  "unique": 96,
+  "duplicates": 6,
+  "sources": [
+    {
+      "source_name": "Google News RSS",
+      "source_type": "news",
+      "status": "degraded",
+      "items": 4,
+      "response_time_ms": 2825,
+      "error": null
+    },
+    {
+      "source_name": "KDnuggets",
+      "source_type": "blog",
+      "status": "degraded",
+      "items": 0,
+      "response_time_ms": 1722,
+      "error": null
+    },
+    {
+      "source_name": "Hugging Face",
+      "source_type": "code",
+      "status": "degraded",
+      "items": 0,
+      "response_time_ms": 5051,
+      "error": null
+    },
+    {
+      "source_name": "arXiv",
+      "source_type": "academic",
+      "status": "degraded",
+      "items": 0,
+      "response_time_ms": 5060,
+      "error": null
+    },
+    {
+      "source_name": "Papers with Code",
+      "source_type": "academic",
+      "status": "degraded",
+      "items": 0,
+      "response_time_ms": 6012,
+      "error": null
+    },
+    {
+      "source_name": "Exa",
+      "source_type": "web",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 3651,
+      "error": null
+    },
+    {
+      "source_name": "GitHub",
+      "source_type": "code",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 8361,
+      "error": null
+    },
+    {
+      "source_name": "NewsAPI",
+      "source_type": "news",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 8362,
+      "error": null
+    },
+    {
+      "source_name": "Apify Reddit",
+      "source_type": "social",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 5533,
+      "error": null
+    },
+    {
+      "source_name": "New York Times",
+      "source_type": "news",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 5546,
+      "error": null
+    },
+    {
+      "source_name": "SerpAPI News",
+      "source_type": "news",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 5548,
+      "error": null
+    },
+    {
+      "source_name": "Serper",
+      "source_type": "web",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 5546,
+      "error": null
+    },
+    {
+      "source_name": "You.com",
+      "source_type": "web",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 10517,
+      "error": null
+    },
+    {
+      "source_name": "Import AI",
+      "source_type": "blog",
+      "status": "degraded",
+      "items": 0,
+      "response_time_ms": 16315,
+      "error": null
+    },
+    {
+      "source_name": "Semantic Scholar",
+      "source_type": "academic",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 19147,
+      "error": null
+    },
+    {
+      "source_name": "npm",
+      "source_type": "code",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 19147,
+      "error": null
+    },
+    {
+      "source_name": "OpenAlex",
+      "source_type": "academic",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 21339,
+      "error": null
+    },
+    {
+      "source_name": "Apify Google Search",
+      "source_type": "web",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 18507,
+      "error": null
+    },
+    {
+      "source_name": "Product Hunt",
+      "source_type": "news",
+      "status": "degraded",
+      "items": 0,
+      "response_time_ms": 18510,
+      "error": null
+    },
+    {
+      "source_name": "Apify News",
+      "source_type": "news",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 21997,
+      "error": null
+    },
+    {
+      "source_name": "The Guardian",
+      "source_type": "news",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 22003,
+      "error": null
+    },
+    {
+      "source_name": "CORE",
+      "source_type": "academic",
+      "status": "unavailable",
+      "items": 0,
+      "response_time_ms": 24831,
+      "error": "Source request failed"
+    },
+    {
+      "source_name": "Towards Data Science",
+      "source_type": "blog",
+      "status": "degraded",
+      "items": 0,
+      "response_time_ms": 25734,
+      "error": null
+    },
+    {
+      "source_name": "Tavily",
+      "source_type": "web",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 29550,
+      "error": null
+    },
+    {
+      "source_name": "Dev.to",
+      "source_type": "blog",
+      "status": "degraded",
+      "items": 0,
+      "response_time_ms": 31662,
+      "error": null
+    },
+    {
+      "source_name": "GNews",
+      "source_type": "news",
+      "status": "degraded",
+      "items": 0,
+      "response_time_ms": 36889,
+      "error": null
+    },
+    {
+      "source_name": "PyPI",
+      "source_type": "code",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 37353,
+      "error": null
+    },
+    {
+      "source_name": "Google Trends",
+      "source_type": "news",
+      "status": "unavailable",
+      "items": 0,
+      "response_time_ms": 36587,
+      "error": "Source request failed"
+    },
+    {
+      "source_name": "Apify Reddit Fast",
+      "source_type": "social",
+      "status": "degraded",
+      "items": 0,
+      "response_time_ms": 37048,
+      "error": null
+    },
+    {
+      "source_name": "Apify Soon-to-Open Businesses",
+      "source_type": "news",
+      "status": "degraded",
+      "items": 3,
+      "response_time_ms": 41004,
+      "error": null
+    },
+    {
+      "source_name": "GDELT",
+      "source_type": "news",
+      "status": "unavailable",
+      "items": 0,
+      "response_time_ms": 45072,
+      "error": "Source request failed"
+    },
+    {
+      "source_name": "RSS Feeds",
+      "source_type": "blog",
+      "status": "degraded",
+      "items": 0,
+      "response_time_ms": 48201,
+      "error": null
+    },
+    {
+      "source_name": "Jina AI",
+      "source_type": "web",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 54588,
+      "error": null
+    },
+    {
+      "source_name": "Hacker News",
+      "source_type": "news",
+      "status": "degraded",
+      "items": 0,
+      "response_time_ms": 60010,
+      "error": null
+    },
+    {
+      "source_name": "Apify Playwright Scraper",
+      "source_type": "web",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 87300,
+      "error": null
+    },
+    {
+      "source_name": "Apify Web Scraper",
+      "source_type": "web",
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 99389,
+      "error": null
+    },
+    {
+      "source_name": "Apify Deep Website Crawler",
+      "source_type": "web",
+      "status": "degraded",
+      "items": 0,
+      "response_time_ms": 149286,
+      "error": null
+    }
+  ]
+}

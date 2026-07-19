@@ -76,14 +76,24 @@ class AnalyzeBriefService:
             warnings=warnings,
         )
         deduped = self._dedupe_documents(documents)
-        ranked = self.ranker.rank(deduped, text, expanded_queries, domain)[:top_k]
-        solution = self.implementation_planner.build(text, analysis, ranked, warnings)
+        relevant = [document for document in deduped if self._domain_relevant(document, domain)]
+        removed_irrelevant = len(deduped) - len(relevant)
+        if removed_irrelevant:
+            warnings.append(f"Removed {removed_irrelevant} sources that did not match the resolved project domain.")
+        all_ranked = self.ranker.rank(relevant, text, expanded_queries, domain)
+        ranked = self._balanced_selection(
+            all_ranked, top_k,
+            include_papers=include_papers, include_github=include_github,
+            include_blogs=include_blogs, include_news=include_news,
+        )
+        resolved_analysis = analysis.model_copy(update={"primary_domain": domain})
+        solution = self.implementation_planner.build(text, resolved_analysis, ranked, warnings)
 
         if not ranked:
             warnings.append("No sources found; generated an initial brief-based implementation plan.")
 
         return {
-            "brief_understanding": self._brief_understanding(analysis, domain, expanded_queries),
+            "brief_understanding": self._brief_understanding(analysis, domain, expanded_queries, text),
             "solution": solution,
             "evidence": self._evidence_groups(ranked),
             "ranked_recommendations": self._ranked_recommendations(ranked, solution),
@@ -99,6 +109,8 @@ class AnalyzeBriefService:
                 "expanded_queries": expanded_queries,
                 "documents_before_dedupe": len(documents),
                 "documents_after_dedupe": len(deduped),
+                "documents_after_domain_filter": len(relevant),
+                "balanced_source_counts": {key: len(value) for key, value in self._evidence_groups(ranked).items()},
                 "ranking_method": "fallback_weighted_scoring",
                 "ranking_stages": [
                     "Query Decomposition",
@@ -204,11 +216,53 @@ class AnalyzeBriefService:
             return FetchResult(source_name=client.name, error=str(exc))
 
     def _query_for_route(self, route: str, queries: list[str]) -> str:
-        if route in {"github", "huggingface"}:
-            return queries[min(1, len(queries) - 1)]
+        joined = " ".join(queries).lower()
+        domain_hint = "revenue intelligence" if any(term in joined for term in ("revenue", "sales", "crm")) else queries[0]
+        if route in {"github", "huggingface", "npm", "pypi"}:
+            return domain_hint
         if route in {"newsapi", "gnews", "google_news_rss", "serpapi_news", "guardian", "nytimes"}:
-            return queries[min(2, len(queries) - 1)]
+            return domain_hint
+        if route in {"hackernews", "devto", "rss", "exa", "tavily", "serper"}:
+            return f"{domain_hint} case study"
+        if route in {"semantic_scholar", "openalex", "arxiv", "paperswithcode"}:
+            return domain_hint
         return queries[0]
+
+    def _domain_relevant(self, document: RawDocument, domain: str) -> bool:
+        if not any(term in domain.lower() for term in ("sales", "revenue")):
+            return True
+        text = f"{document.title} {document.text[:1200]}".lower()
+        terms = (
+            "revenue intelligence", "revenue operations", "revenue forecasting", "sales", "crm",
+            "pipeline", "sales forecast", "churn", "customer success",
+            "lead scoring", "lead generation", "marketing", "go-to-market", "gtm", "commercial",
+            "account intelligence", "next best action",
+        )
+        return any(term in text for term in terms)
+
+    def _bucket(self, item: RankedEvidence) -> str:
+        source_type = str(item.document.source_type or "").lower()
+        source_name = item.document.source_name.lower()
+        if source_type == "academic": return "papers"
+        if source_type == "code" or any(term in source_name for term in ("github", "npm", "pypi", "hugging face")): return "github_repositories"
+        if source_type == "news": return "news"
+        if source_type in {"blog", "web"}: return "blogs"
+        return "industry_sources"
+
+    def _balanced_selection(self, ranked: list[RankedEvidence], top_k: int, **flags: bool) -> list[RankedEvidence]:
+        requested = []
+        if flags.get("include_papers"): requested.append("papers")
+        if flags.get("include_github"): requested.append("github_repositories")
+        if flags.get("include_blogs"): requested.append("blogs")
+        if flags.get("include_news"): requested.append("news")
+        buckets = {name: [item for item in ranked if self._bucket(item) == name] for name in requested}
+        minimum = min(4, max(1, top_k // max(len(requested) * 2, 1)))
+        selected: list[RankedEvidence] = []
+        for name in requested:
+            selected.extend(buckets[name][:minimum])
+        selected_ids = {id(item) for item in selected}
+        selected.extend(item for item in ranked if id(item) not in selected_ids)
+        return selected[:top_k]
 
     def _dedupe_documents(self, documents: list[RawDocument]) -> list[RawDocument]:
         seen: set[str] = set()
@@ -221,13 +275,14 @@ class AnalyzeBriefService:
             output.append(document)
         return output
 
-    def _brief_understanding(self, analysis: BriefAnalysis, domain: str, queries: list[str]) -> dict[str, Any]:
+    def _brief_understanding(self, analysis: BriefAnalysis, domain: str, queries: list[str], text: str) -> dict[str, Any]:
         constraints = analysis.constraints or {}
         constraint_list = [
             f"{key.replace('_', ' ')}: {value}"
             for key, value in constraints.items()
             if value not in (False, None, "", [])
         ]
+        aspects = self._extract_aspects(text)
         return {
             "title": analysis.title,
             "summary": analysis.objective or analysis.intent,
@@ -237,7 +292,7 @@ class AnalyzeBriefService:
             "subdomain": ", ".join(analysis.secondary_domains[:3]),
             "intent": analysis.intent,
             "target_audience": analysis.audience,
-            "requirements": analysis.research_questions or analysis.deliverables,
+            "requirements": unique_keep_order(aspects["functional_requirements"] + analysis.deliverables),
             "constraints": constraint_list,
             "deliverables": analysis.deliverables,
             "inputs": analysis.inputs,
@@ -245,7 +300,23 @@ class AnalyzeBriefService:
             "risks": analysis.risks,
             "dependencies": analysis.dependencies,
             "success_criteria": self._success_criteria(analysis),
+            **aspects,
             "recommended_search_queries": queries[:10],
+        }
+
+    def _extract_aspects(self, text: str) -> dict[str, list[str]]:
+        clauses = [part.strip(" .:") for part in __import__("re").split(r"[;\n]+", text) if len(part.strip()) > 8]
+        groups = {
+            "functional_requirements": ("must", "analy", "predict", "recommend", "integrate", "build", "compare"),
+            "data_inputs": ("crm", "transcript", "engagement", "product usage", "customer", "data"),
+            "integrations": ("salesforce", "hubspot", "snowflake", "slack", "api", "integrat"),
+            "governance_requirements": ("security", "secure", "pii", "role-based", "audit", "approval", "privacy", "compliance"),
+            "evaluation_requirements": ("metric", "evaluation", "success criteria", "benchmark", "pilot", "accuracy", "cost"),
+            "decisions_to_make": ("build versus buy", "build vs buy", "compare", "alternative", "vendor"),
+        }
+        return {
+            name: unique_keep_order([clause[:360] for clause in clauses if any(term in clause.lower() for term in terms)])[:12]
+            for name, terms in groups.items()
         }
 
     def _success_criteria(self, analysis: BriefAnalysis) -> list[str]:
@@ -276,7 +347,7 @@ class AnalyzeBriefService:
                 groups["github_repositories"].append(rendered)
             elif source_type == "news":
                 groups["news"].append(rendered)
-            elif source_type == "web":
+            elif source_type in {"blog", "web"}:
                 groups["blogs"].append(rendered)
             else:
                 groups["industry_sources"].append(rendered)
@@ -291,6 +362,15 @@ class AnalyzeBriefService:
                 "reasoning": solution["why_this_approach"],
             }
         ]
+        for item in ranked[:5]:
+            recommendations.append(
+                {
+                    "recommendation": f"Evaluate the applicable method or tool from: {item.document.title}",
+                    "confidence_score": item.confidence_score,
+                    "supporting_sources": [item.document.source_url],
+                    "reasoning": item.why_relevant,
+                }
+            )
         for step in solution.get("implementation_steps", [])[:5]:
             recommendations.append(
                 {

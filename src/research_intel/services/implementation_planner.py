@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from research_intel.schemas import BriefAnalysis
 from research_intel.services.evidence_ranker import RankedEvidence
+from research_intel.utils import unique_keep_order
 
 
 class ImplementationPlanner:
@@ -32,6 +33,14 @@ class ImplementationPlanner:
         }
 
     def _approach(self, domain: str, has_evidence: bool) -> str:
+        if any(term in domain.lower() for term in ("sales", "revenue")):
+            return (
+                "Build a governed revenue-intelligence decision layer on top of the existing CRM and warehouse. "
+                "Unify opportunity, conversation, marketing, product-usage, and customer-success signals; generate "
+                "pipeline-risk, churn-risk, and next-best-action recommendations; attach evidence citations to every "
+                "recommendation; and require human approval before updates reach seller workflows. Validate it in a "
+                "90-day pilot before deciding whether to expand the internal build or adopt a commercial platform."
+            )
         if has_evidence:
             return (
                 f"Use a domain-aware research workflow for {domain}: classify the brief, retrieve source-backed "
@@ -50,6 +59,16 @@ class ImplementationPlanner:
         return f"The recommendation is grounded in the highest-ranked available evidence from {top_sources}, weighted for relevance, authority, freshness, and practical implementation value."
 
     def _architecture(self, domain: str, tools: list[str], has_evidence: bool) -> str:
+        if any(term in domain.lower() for term in ("sales", "revenue")):
+            return (
+                "1. Source connectors: Salesforce/HubSpot CRM, call transcripts, marketing engagement, product telemetry, "
+                "and customer-success records. 2. Governed data layer in Snowflake with identity resolution, consent, "
+                "retention, and row-level access policies. 3. Feature and evidence layer for account timelines, pipeline "
+                "signals, and citation-ready source records. 4. Modeling layer for forecast risk, churn risk, and ranked "
+                "next-best actions with calibrated confidence. 5. Policy layer enforcing RBAC, PII redaction, audit logs, "
+                "human approval, and abstention on weak evidence. 6. Activation through Salesforce, HubSpot, and Slack, "
+                "with an evaluation dashboard tracking lift, false alerts, adoption, and time saved."
+            )
         evidence_layer = "External evidence retrieval and ranking layer" if has_evidence else "Brief-only analysis layer until sources are configured"
         return (
             f"1. Brief intake and document parsing. 2. Domain classification for {domain}. "
@@ -67,10 +86,16 @@ class ImplementationPlanner:
         ]
         tools.extend(analysis.tools_or_platforms)
         tools.extend(analysis.technologies)
+        if any(term in (analysis.primary_domain or "").lower() for term in ("sales", "revenue")):
+            tools.extend([
+                "Salesforce or HubSpot APIs", "Snowflake", "dbt", "Airbyte or Fivetran",
+                "FastAPI", "MLflow", "Great Expectations", "OpenTelemetry",
+                "OPA or application RBAC", "Slack API",
+            ])
         for item in evidence[:8]:
             if item.document.source_name not in tools:
                 tools.append(item.document.source_name)
-        return tools[:14]
+        return unique_keep_order(tools)[:14]
 
     def _apis(self, evidence: list[RankedEvidence]) -> list[str]:
         names = []
@@ -81,6 +106,16 @@ class ImplementationPlanner:
         return names[:12]
 
     def _steps(self, analysis: BriefAnalysis, has_evidence: bool) -> list[str]:
+        if any(term in (analysis.primary_domain or "").lower() for term in ("sales", "revenue")):
+            return [
+                "Weeks 1-2: Baseline pipeline accuracy, churn recall, rep research time, action acceptance, and data quality; define the 90-day pilot cohort and control group.",
+                "Weeks 2-4: Connect CRM, calls, marketing, product, and customer-success data; establish account identity, lineage, permissions, retention, and PII rules.",
+                "Weeks 4-6: Create source-grounded account timelines and features; train or configure pipeline-risk and churn models; calibrate confidence and abstention thresholds.",
+                "Weeks 6-8: Generate cited next-best actions, add manager approval, and integrate approved outputs into Salesforce/HubSpot and Slack.",
+                "Weeks 8-10: Run offline back-tests and red-team citation, leakage, bias, security, and false-alert failure modes.",
+                "Weeks 10-13: Run the controlled pilot; compare forecast error, churn detection, conversion, cycle time, user adoption, and hours saved against baseline.",
+                "At day 90: Decide build, buy, or hybrid using measured lift, operating cost, integration fit, governance coverage, and switching risk.",
+            ]
         steps = [
             "Confirm objective, audience, deliverables, constraints, and success criteria with the business owner.",
             "Finalize domain-specific search queries and source inclusion rules.",
@@ -106,8 +141,10 @@ class ImplementationPlanner:
         return steps
 
     def _timeline(self, analysis: BriefAnalysis) -> list[str]:
-        if analysis.timeline:
+        if analysis.timeline and not any(term in " ".join(analysis.timeline).lower() for term in ("pilot", "90-day", "90 day")):
             return analysis.timeline[:6]
+        if any(term in (analysis.primary_domain or "").lower() for term in ("sales", "revenue")):
+            return ["Days 1-30: data, governance, baseline, and prototype", "Days 31-60: models, cited recommendations, approvals, and integrations", "Days 61-90: controlled pilot, evaluation, and build-vs-buy decision"]
         return [
             "Day 1-2: Confirm scope, success criteria, and source access.",
             "Day 3-5: Implement intake, routing, retrieval, ranking, and error handling.",

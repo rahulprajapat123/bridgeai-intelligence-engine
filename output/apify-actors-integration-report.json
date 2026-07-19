@@ -1,0 +1,47 @@
+[
+  {
+    "source": "Apify solidcode Reddit",
+    "latest": {
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 8991,
+      "error": null
+    }
+  },
+  {
+    "source": "Apify Dice Jobs",
+    "latest": {
+      "status": "healthy",
+      "items": 5,
+      "response_time_ms": 17199,
+      "error": null
+    }
+  },
+  {
+    "source": "Apify Soon-to-Open Businesses",
+    "latest": {
+      "status": "degraded",
+      "items": 3,
+      "response_time_ms": 7728,
+      "error": null
+    }
+  },
+  {
+    "source": "Apify Playwright Scraper",
+    "latest": {
+      "status": "degraded",
+      "items": 3,
+      "response_time_ms": 112095,
+      "error": null
+    }
+  },
+  {
+    "source": "Apify Deep Website Crawler",
+    "latest": {
+      "status": "degraded",
+      "items": 0,
+      "response_time_ms": 150008,
+      "error": null
+    }
+  }
+]

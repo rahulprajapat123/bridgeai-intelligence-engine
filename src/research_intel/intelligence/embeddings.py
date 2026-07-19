@@ -30,6 +30,28 @@ class EmbeddingService:
                 pass
         return self._hash_embedding(text)
 
+    def batch_embed(self, texts: list[str]) -> list[list[float]]:
+        """Batch embed multiple texts efficiently."""
+        if not texts:
+            return []
+        
+        if self._client:
+            # OpenAI supports batch embedding (max 2048 inputs)
+            try:
+                # Truncate texts and batch them
+                truncated = [text[:8000] for text in texts]
+                result = self._client.embeddings.create(
+                    model="text-embedding-3-small",
+                    input=truncated,
+                )
+                return [list(item.embedding) for item in result.data]
+            except Exception:
+                # Fall back to individual hash embeddings on error
+                pass
+        
+        # Use hash embeddings for all texts
+        return [self._hash_embedding(text) for text in texts]
+
     def _hash_embedding(self, text: str) -> list[float]:
         vector = [0.0] * self.dimension
         for token in tokenize(text):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
@@ -147,6 +147,137 @@ class DailyIntelligenceReport(Base):
     report: Mapped[dict] = mapped_column(JSON, default=dict)
 
 
+class IngestionBatch(Base):
+    __tablename__ = "ingestion_batches"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    batch_type: Mapped[str] = mapped_column(String(32), default="daily_intelligence")
+    started_at = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), default="created", index=True)
+    total_sources: Mapped[int] = mapped_column(Integer, default=0)
+    successful_sources: Mapped[int] = mapped_column(Integer, default=0)
+    failed_sources: Mapped[int] = mapped_column(Integer, default=0)
+    total_raw_items: Mapped[int] = mapped_column(Integer, default=0)
+    unique_items: Mapped[int] = mapped_column(Integer, default=0)
+    duplicate_items: Mapped[int] = mapped_column(Integer, default=0)
+    summarized_items: Mapped[int] = mapped_column(Integer, default=0)
+    approved_items: Mapped[int] = mapped_column(Integer, default=0)
+    rejected_items: Mapped[int] = mapped_column(Integer, default=0)
+    edited_items: Mapped[int] = mapped_column(Integer, default=0)
+    configuration_snapshot: Mapped[dict] = mapped_column(JSON, default=dict)
+    error_summary: Mapped[list] = mapped_column(JSON, default=list)
+    created_by: Mapped[str] = mapped_column(String(120), default="system")
+    review_locked: Mapped[bool] = mapped_column(Boolean, default=False)
+    approved_snapshot: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+
+class DailyRawItem(Base):
+    __tablename__ = "daily_raw_items"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    batch_id: Mapped[str] = mapped_column(ForeignKey("ingestion_batches.id"), index=True)
+    source_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    source_name: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    external_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    url: Mapped[str] = mapped_column(Text, nullable=False)
+    canonical_url: Mapped[str] = mapped_column(Text, nullable=False, index=True)
+    author: Mapped[str] = mapped_column(Text, default="")
+    organization: Mapped[str] = mapped_column(Text, default="")
+    published_at = mapped_column(DateTime(timezone=True), nullable=True)
+    scraped_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+    original_response: Mapped[dict] = mapped_column(JSON, default=dict)
+    raw_content: Mapped[str] = mapped_column(Text, default="")
+    cleaned_content: Mapped[str] = mapped_column(Text, default="")
+    abstract: Mapped[str] = mapped_column(Text, default="")
+    description: Mapped[str] = mapped_column(Text, default="")
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    language: Mapped[str] = mapped_column(String(16), default="en")
+    content_type: Mapped[str] = mapped_column(String(80), default="text/html")
+    relevance_score: Mapped[float] = mapped_column(Float, default=0)
+    credibility_score: Mapped[float] = mapped_column(Float, default=0)
+    access_status: Mapped[str] = mapped_column(String(32), default="available")
+    licence: Mapped[str] = mapped_column(Text, default="")
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    duplicate_of: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    processing_status: Mapped[str] = mapped_column(String(32), default="unprocessed")
+    review_status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
+
+
+class DailySourceReference(Base):
+    __tablename__ = "daily_source_references"
+    __table_args__ = (UniqueConstraint("batch_id", "source_name", "external_id", name="uq_daily_source_ref"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    batch_id: Mapped[str] = mapped_column(ForeignKey("ingestion_batches.id"), index=True)
+    item_id: Mapped[str] = mapped_column(ForeignKey("daily_raw_items.id"), index=True)
+    source_name: Mapped[str] = mapped_column(String(80), nullable=False)
+    external_id: Mapped[str] = mapped_column(Text, default="")
+    url: Mapped[str] = mapped_column(Text, default="")
+    identifiers_json: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
+class DailySummary(Base):
+    __tablename__ = "summaries"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    batch_id: Mapped[str] = mapped_column(ForeignKey("ingestion_batches.id"), index=True)
+    item_id: Mapped[str | None] = mapped_column(ForeignKey("daily_raw_items.id"), nullable=True, index=True)
+    source_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    source_name: Mapped[str] = mapped_column(String(80), default="")
+    summary_level: Mapped[str] = mapped_column(String(32), nullable=False)
+    summary_text: Mapped[str] = mapped_column(Text, default="")
+    structured_summary_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    citations_json: Mapped[list] = mapped_column(JSON, default=list)
+    model_name: Mapped[str] = mapped_column(String(120), default="deterministic-extractive")
+    prompt_version: Mapped[str] = mapped_column(String(40), default="daily-v1")
+    status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
+    reviewer_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    reviewer_notes: Mapped[str] = mapped_column(Text, default="")
+    edited_summary_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
+    approved_at = mapped_column(DateTime(timezone=True), nullable=True)
+    rejected_at = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class DailySourceRun(Base):
+    __tablename__ = "daily_source_runs"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    batch_id: Mapped[str] = mapped_column(ForeignKey("ingestion_batches.id"), index=True)
+    source_name: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    source_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="healthy")
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+    completed_at = mapped_column(DateTime(timezone=True), nullable=True)
+    status_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    response_time_ms: Mapped[int] = mapped_column(Integer, default=0)
+    items_returned: Mapped[int] = mapped_column(Integer, default=0)
+    quota_consumed: Mapped[int] = mapped_column(Integer, default=0)
+    retries: Mapped[int] = mapped_column(Integer, default=0)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    circuit_breaker_state: Mapped[str] = mapped_column(String(32), default="closed")
+
+
+class DailyAuditLog(Base):
+    __tablename__ = "daily_audit_logs"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    batch_id: Mapped[str] = mapped_column(ForeignKey("ingestion_batches.id"), index=True)
+    item_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    summary_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    action: Mapped[str] = mapped_column(String(80), nullable=False)
+    actor_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    details_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+
 class ManualReviewQueue(Base):
     __tablename__ = "manual_review_queue"
 
@@ -157,3 +288,19 @@ class ManualReviewQueue(Base):
     reason: Mapped[str] = mapped_column(Text, nullable=False)
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
     status: Mapped[str] = mapped_column(String(32), default="open")
+
+
+class HistoricalSignal(Base):
+    """Historical storage for filter novelty scoring."""
+    __tablename__ = "historical_signals"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    batch_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    item_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    content_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    normalized_text: Mapped[str] = mapped_column(Text, default="")
+    source_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    published_at = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    domain: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)

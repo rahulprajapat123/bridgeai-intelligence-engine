@@ -6,6 +6,8 @@ from typing import Annotated, Any
 from pydantic import EmailStr, Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+from research_intel.intelligence_scope import DEFAULT_DAILY_TOPICS
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -19,7 +21,9 @@ class Settings(BaseSettings):
     openalex_contact_email: EmailStr | None = None
     huggingface_token: str | None = None
     gnews_api_key: str | None = None
+    gnews_api_key_alternate: str | None = None
     newsapi_key: str | None = None
+    newsapi_key_alternate: str | None = None
     github_token: str | None = None
     apify_api_token: str | None = None
     openai_api_key: str | None = None
@@ -29,7 +33,17 @@ class Settings(BaseSettings):
     tavily_api_key: str | None = None
     serper_api_key: str | None = None
     serpapi_api_key: str | None = None
+    serpapi_api_key_alternate: str | None = None  # Fallback for specialized searches
     firecrawl_api_key: str | None = None
+    firecrawl_api_key_alternate: str | None = None
+
+    # New API Keys (FREE Registrations)
+    producthunt_token: str | None = None
+    core_api_key: str | None = None
+    you_api_key: str | None = None
+    jina_api_key: str | None = None
+    reddit_client_id: str | None = None
+    reddit_client_secret: str | None = None
     
     # Apify scraper settings
     apify_scraper_timeout_secs: int = 300
@@ -87,6 +101,11 @@ class Settings(BaseSettings):
 
     request_timeout_seconds: float = 20.0
     user_agent: str = "BridgeAI-Research-Intelligence/0.1"
+    daily_source_budgets_json: str = "{}"
+    daily_topics: Annotated[list[str], NoDecode] = Field(default_factory=lambda: list(DEFAULT_DAILY_TOPICS))
+    daily_background_workers: int = 2
+    daily_default_reviewer_role: str = "reviewer"
+    daily_max_content_chars: int = 100000
 
     @field_validator("research_topics", mode="before")
     @classmethod
@@ -96,6 +115,11 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return [part.strip() for part in value.split(",") if part.strip()]
         return value
+
+    @field_validator("daily_topics", mode="before")
+    @classmethod
+    def split_daily_topics(cls, value: Any) -> list[str]:
+        return cls.split_topics(value)
 
     @field_validator("openalex_contact_email", "daily_email_to", mode="before")
     @classmethod

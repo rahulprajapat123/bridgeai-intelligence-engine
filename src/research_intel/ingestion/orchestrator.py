@@ -18,6 +18,7 @@ from research_intel.intelligence.extraction import ClaimExtractor
 from research_intel.models import Claim, IngestionRun, ManualReviewQueue, ResearchItem, SourceHealth, now_utc
 from research_intel.schemas import IngestResponse
 from research_intel.services.document_parser import DocumentParserService
+from research_intel.services.research_analyzer import ResearchPaperAnalyzer
 from research_intel.utils import stable_id, text_hash
 
 
@@ -30,6 +31,7 @@ class IngestionOrchestrator:
         embeddings: EmbeddingService,
         classifier: DomainClassifier | None = None,
         document_parser: DocumentParserService | None = None,
+        research_analyzer: ResearchPaperAnalyzer | None = None,
     ) -> None:
         self.settings = settings
         self.extractor = extractor
@@ -38,6 +40,7 @@ class IngestionOrchestrator:
         self.classifier = classifier or DomainClassifier()
         self.policy = SourcePolicy()
         self.document_parser = document_parser or DocumentParserService(settings)
+        self.research_analyzer = research_analyzer or ResearchPaperAnalyzer(settings)
 
     async def ingest_topic(
         self,
@@ -143,7 +146,18 @@ class IngestionOrchestrator:
         item.authors = document.authors[:25]
         item.publication_date = self._parse_date(document.publication_date)
         item.domain_tags = [domain, document.metadata.get("domain", "")]
-        item.metadata_json = {**document.metadata, "usage_bucket": usage_bucket(credibility)}
+        
+        # Perform comprehensive AI analysis for academic papers
+        base_metadata = {**document.metadata, "usage_bucket": usage_bucket(credibility)}
+        if document.source_type == "academic":
+            analysis = self.research_analyzer.analyze(document)
+            if analysis:
+                item.metadata_json = self.research_analyzer.enrich_metadata(base_metadata, analysis)
+            else:
+                item.metadata_json = base_metadata
+        else:
+            item.metadata_json = base_metadata
+        
         item.raw_text = document.text[:30000]
         item.cleaned_text = " ".join((document.text or "").split())[:30000]
         item.parse_status = "parsed" if document.text else "parse_failed"

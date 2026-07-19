@@ -9,6 +9,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from research_intel.api.routes import router
+from research_intel.api.daily_routes import router as daily_router
+from research_intel.api.signal_filter_routes import router as signal_filter_router
 from research_intel.config import get_settings
 from research_intel.db import SessionLocal, init_db
 from research_intel.services.factory import build_services
@@ -43,6 +45,8 @@ app = FastAPI(
 )
 
 app.include_router(router)
+app.include_router(daily_router)
+app.include_router(signal_filter_router)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 

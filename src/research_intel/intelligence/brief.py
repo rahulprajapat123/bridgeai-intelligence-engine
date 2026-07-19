@@ -24,6 +24,14 @@ DELIVERABLE_TERMS = {
     "intel vs competitor": "Intel vs Competitor Comparison",
     "benchmark": "Benchmark",
     "static rag dashboard": "Static RAG Dashboard",
+    "build versus buy": "Build-vs-Buy Assessment",
+    "architecture": "Implementation Architecture",
+    "evaluation metrics": "Evaluation Framework and Metrics",
+    "cost": "Cost Estimate",
+    "pilot": "Pilot Plan",
+    "success criteria": "Measurable Success Criteria",
+    "risk": "Risk and Mitigation Register",
+    "research": "Research and Evidence Review",
 }
 
 
@@ -96,7 +104,7 @@ class BriefUnderstandingService:
     def _objective(self, text: str, intent: str) -> str:
         for sentence in sentence_split(text):
             if re.search(r"\b(objective|goal|purpose|need|analyze|assess|recommend|compare)\b", sentence, re.I):
-                return sentence[:260]
+                return sentence[:500]
         return intent
 
     def _keywords(self, text: str) -> list[str]:
@@ -163,6 +171,12 @@ class BriefUnderstandingService:
         for label, terms in {
             "executives": ("executive", "leadership", "c-suite"),
             "marketing team": ("marketing", "co-marketing", "mdf"),
+            "chief revenue officer": ("cro", "chief revenue officer"),
+            "revenue operations": ("revops", "revenue operations"),
+            "sales leadership": ("sales manager", "vp sales", "sales leader"),
+            "customer success": ("customer success", "csm"),
+            "product team": ("product manager", "product team"),
+            "analytics team": ("analyst", "analytics team", "data team"),
             "partner team": ("partner", "channel"),
             "developers": ("developer", "engineering", "sdk", "api"),
             "legal team": ("legal", "compliance", "contract"),
@@ -182,6 +196,12 @@ class BriefUnderstandingService:
             "OpenAI",
             "Claude",
             "Gemini",
+            "Machine Learning",
+            "Predictive Analytics",
+            "Recommendation Engine",
+            "Knowledge Graph",
+            "Snowflake",
+            "PostgreSQL",
         ]
         lowered = text.lower()
         return [candidate for candidate in candidates if candidate.lower() in lowered]
@@ -198,6 +218,12 @@ class BriefUnderstandingService:
             "OpenAlex",
             "Serper",
             "Exa",
+            "Salesforce",
+            "HubSpot",
+            "Snowflake",
+            "Slack",
+            "Microsoft Dynamics",
+            "Databricks",
         ]
         lowered = text.lower()
         return [candidate for candidate in candidates if candidate.lower() in lowered]
@@ -300,6 +326,17 @@ class BriefUnderstandingService:
             queries.append("Sprinklr social listening competitive sentiment methodology")
         if "rag" in lowered or "retrieval" in lowered:
             queries.append("RAG retrieval reranking evaluation benchmark failure modes")
+        if any(term in lowered for term in ("sales", "revenue", "crm", "pipeline", "revops")):
+            queries.extend(
+                [
+                    "revenue intelligence pipeline risk prediction next best action enterprise case study",
+                    "CRM sales forecasting churn prediction machine learning evaluation benchmark",
+                    "open source revenue intelligence sales agent CRM architecture",
+                    "revenue operations AI governance human approval audit logging PII",
+                ]
+            )
+        if "build versus buy" in lowered or "build vs buy" in lowered:
+            queries.append("revenue intelligence platform build versus buy cost architecture comparison")
         return unique_keep_order([query for query in queries if query])[:10]
 
     def _infer_project_context(

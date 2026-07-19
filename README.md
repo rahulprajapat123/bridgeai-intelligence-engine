@@ -1,5 +1,15 @@
 # Research Intelligence Platform
 
+## Daily Intelligence v2
+
+Daily Intelligence is now organized by source category: Academic, Code, News, Blogs, Web, and Social. A run creates a background batch, applies provider-specific budgets and failure isolation, normalizes and deduplicates source records, creates citation-preserving structured summaries, and presents them at Human Checkpoint 1. Reviewers can edit without overwriting AI output, approve/reject individually or in bulk, lock a reviewed snapshot, and export a source-grouped PDF.
+
+Start a run with `POST /api/daily-intelligence/run`, then poll `GET /api/daily-intelligence/batches/{batch_id}`. Review requests accept `X-Reviewer-Id` and `X-Reviewer-Role`; production deployments should connect these headers to their identity proxy. The in-process FastAPI background task and APScheduler reuse the current stack. For horizontally scaled production deployments, replace this seam with Redis plus Celery/ARQ.
+
+Source budgets are configured with `DAILY_SOURCE_BUDGETS_JSON`; never assume the example quotas are current. API keys remain in environment variables. Sources without required credentials are reported as disabled, and source failures do not fail the full batch. General web search uses a primary/fallback chain to avoid paying multiple near-duplicate providers per run.
+
+See [Daily Intelligence API](DAILY_INTELLIGENCE_API.md) and [migration notes](MIGRATION_NOTES.md).
+
 Domain-aware multi-source ingestion and recommendation system for BridgeAI-style research intelligence. It ingests academic, web, news, code, and tooling sources; normalizes them into claim-level evidence; scores credibility; retrieves with hybrid semantic/lexical ranking; and returns schema-validated recommendations with citations.
 
 ## What is implemented
@@ -9,7 +19,7 @@ Domain-aware multi-source ingestion and recommendation system for BridgeAI-style
 - Strict project context intake. Missing required fields return `insufficient_evidence`.
 - Domain classification before retrieval, including Partner Programs and Competitive Intelligence routing so business briefs do not default to AI/RAG.
 - Structured brief extraction for deliverables, dependencies, risks, inputs, outputs, timeline, and constraints.
-- Source clients for arXiv, Semantic Scholar, OpenAlex, Hugging Face, GitHub, NewsAPI, GNews, Guardian, NYTimes, MediaCloud, Serper, Exa, Tavily, and Firecrawl.
+- Source clients for arXiv, Semantic Scholar, OpenAlex, Papers with Code, CORE, Hugging Face, GitHub, NewsAPI, GNews, Guardian, NYTimes, Hacker News, GDELT, Product Hunt, Dev.to, RSS Feeds, Towards Data Science, KDnuggets, Import AI, Serper, Exa, Tavily, Jina AI, You.com, Firecrawl, npm, PyPI, and Apify scrapers (39+ total sources).
 - Claim extraction with optional OpenAI JSON extraction and deterministic fallback.
 - Credibility scoring using the required 100-point framework: source authority, evidence strength, transparency, recency, and external validation.
 - Local hash embeddings by default, optional OpenAI embeddings when configured.
