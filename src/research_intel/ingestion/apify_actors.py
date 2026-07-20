@@ -176,8 +176,8 @@ def normalize_web_item(item: dict[str, Any], domain: str | None, source_name: st
 
 def build_apify_actor_clients(http: httpx.AsyncClient, settings: Settings):
     return [
-        FastRedditClient(http, settings), 
-        GoogleTrendsScraperClient(http, settings),
+        FastRedditClient(http, settings),
+        # GoogleTrendsScraperClient removed - now using direct pytrends in clients.py
         SoonToOpenBusinessesClient(http, settings), 
         DeepWebsiteCrawlerClient(http, settings), 
         PlaywrightActorClient(http, settings)

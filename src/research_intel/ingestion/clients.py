@@ -1805,6 +1805,133 @@ class GDELTClient(HttpSourceClient):
             return FetchResult(source_name=self.name, error=str(exc))
 
 
+class GoogleTrendsClient(HttpSourceClient):
+    """Google Trends - Trending search topics and related queries (Unlimited FREE)"""
+    name = "Google Trends"
+    route_name = "google_trends"
+    source_type = "news"
+    _last_request_time: float = 0.0
+    _lock = asyncio.Lock()
+
+    def __init__(self, http: httpx.AsyncClient, settings: Settings) -> None:
+        super().__init__(http, enabled_without_key=True)
+
+    async def fetch(self, query: str, *, max_results: int, domain: str | None = None) -> FetchResult:
+        """Fetch trending topics and related queries from Google Trends using pytrends."""
+        try:
+            # Use class-level lock and rate limiting (Google Trends can block aggressive requests)
+            async with self._lock:
+                import time
+                current_time = time.time()
+                time_since_last = current_time - GoogleTrendsClient._last_request_time
+                
+                # Wait 2 seconds between requests to be respectful
+                if time_since_last < 2.0:
+                    await asyncio.sleep(2.0 - time_since_last)
+                
+                # Run pytrends in executor since it's synchronous
+                docs = await asyncio.get_event_loop().run_in_executor(
+                    None, self._fetch_trends_sync, query, max_results, domain
+                )
+                
+                GoogleTrendsClient._last_request_time = time.time()
+                
+            return FetchResult(source_name=self.name, documents=docs)
+        except Exception as exc:
+            return FetchResult(source_name=self.name, error=str(exc))
+    
+    def _fetch_trends_sync(self, query: str, max_results: int, domain: str | None) -> list[RawDocument]:
+        """Synchronous pytrends fetch (runs in executor)."""
+        try:
+            from pytrends.request import TrendReq
+            
+            # Initialize pytrends
+            pytrends = TrendReq(hl='en-US', tz=0, timeout=(5, 10))
+            
+            docs = []
+            
+            # Build payload for the query
+            pytrends.build_payload([query], timeframe='now 7-d', geo='')
+            
+            # Get related queries
+            related_queries = pytrends.related_queries()
+            if query in related_queries and related_queries[query]:
+                rising = related_queries[query].get('rising')
+                top = related_queries[query].get('top')
+                
+                # Add rising queries
+                if rising is not None and not rising.empty:
+                    for idx, row in rising.head(max_results).iterrows():
+                        related_query = row.get('query', '')
+                        value = row.get('value', 0)
+                        
+                        docs.append(
+                            RawDocument(
+                                title=f"Rising: {related_query}",
+                                source_url=f"https://trends.google.com/trends/explore?q={related_query}",
+                                source_type="news",
+                                source_name=self.name,
+                                text=f"Trending search query: {related_query}. Interest growth: {value}",
+                                metadata={
+                                    "domain": domain,
+                                    "trend_type": "rising",
+                                    "interest_value": str(value),
+                                    "base_query": query,
+                                },
+                            )
+                        )
+                
+                # Add top queries if we need more
+                if len(docs) < max_results and top is not None and not top.empty:
+                    remaining = max_results - len(docs)
+                    for idx, row in top.head(remaining).iterrows():
+                        related_query = row.get('query', '')
+                        value = row.get('value', 0)
+                        
+                        docs.append(
+                            RawDocument(
+                                title=f"Top: {related_query}",
+                                source_url=f"https://trends.google.com/trends/explore?q={related_query}",
+                                source_type="news",
+                                source_name=self.name,
+                                text=f"Popular search query: {related_query}. Search interest: {value}",
+                                metadata={
+                                    "domain": domain,
+                                    "trend_type": "top",
+                                    "interest_value": str(value),
+                                    "base_query": query,
+                                },
+                            )
+                        )
+            
+            # Get interest over time data
+            if not docs:
+                interest = pytrends.interest_over_time()
+                if not interest.empty and query in interest.columns:
+                    recent_interest = int(interest[query].tail(7).mean())
+                    docs.append(
+                        RawDocument(
+                            title=f"Trend Analysis: {query}",
+                            source_url=f"https://trends.google.com/trends/explore?q={query}",
+                            source_type="news",
+                            source_name=self.name,
+                            text=f"Search interest for '{query}'. 7-day average interest: {recent_interest}",
+                            metadata={
+                                "domain": domain,
+                                "trend_type": "interest_over_time",
+                                "interest_value": str(recent_interest),
+                                "base_query": query,
+                            },
+                        )
+                    )
+            
+            return docs[:max_results]
+            
+        except Exception as e:
+            # Return empty list on error - the outer function will catch and report
+            raise Exception(f"pytrends error: {str(e)}")
+
+
 class NpmClient(HttpSourceClient):
     """npm Registry API - JavaScript packages (Unlimited FREE)"""
     name = "npm"
@@ -2204,6 +2331,7 @@ def build_clients(http: httpx.AsyncClient, settings: Settings):
         HackerNewsClient(http, settings),  # NEW - FREE unlimited
         StackExchangeClient(http, settings),  # Keyless community/social fallback
         GDELTClient(http, settings),  # NEW - FREE unlimited
+        GoogleTrendsClient(http, settings),  # NEW - FREE unlimited (pytrends)
         ProductHuntClient(http, settings),  # NEW - FREE (product launches)
         
         # Blog sources (NEW - FREE)
