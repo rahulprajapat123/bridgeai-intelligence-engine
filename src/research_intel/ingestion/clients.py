@@ -348,9 +348,17 @@ class HuggingFaceClient(HttpSourceClient):
     async def fetch(self, query: str, *, max_results: int, domain: str | None = None) -> FetchResult:
         headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
         try:
+            # Extract keywords for better search (e.g., "AI tools" -> search for "ai")
+            search_term = query
+            if len(query.split()) > 2:
+                # Use first meaningful word for model search
+                keywords = [w.lower() for w in query.split() if len(w) > 2 and w.lower() not in {'the', 'and', 'for', 'with', 'latest', 'new', 'tools', 'models'}]
+                if keywords:
+                    search_term = keywords[0]
+            
             response = await self.http.get(
                 "https://huggingface.co/api/models",
-                params={"search": query, "limit": min(max_results, 100), "sort": "downloads"},
+                params={"search": search_term, "limit": min(max_results, 100), "sort": "downloads"},
                 headers=headers,
             )
             response.raise_for_status()
@@ -1401,23 +1409,44 @@ class DevToClient(HttpSourceClient):
     async def fetch(self, query: str, *, max_results: int, domain: str | None = None) -> FetchResult:
         """Fetch articles from Dev.to by tag or search."""
         try:
-            # Try to use query as tag, or use popular tech tags
+            # Extract best tag from query or get top articles
             params = {"per_page": min(max_results, 100)}
             
-            # If query looks like a tag (single word), use tag endpoint
-            if query and " " not in query.strip():
-                params["tag"] = query.lower()
+            # Try to use a meaningful keyword as tag
+            tag = None
+            if query:
+                # Common tech tags that work on Dev.to
+                tech_tags = {'ai', 'machinelearning', 'python', 'javascript', 'react', 'webdev', 'tutorial', 'beginners'}
+                query_words = {w.lower() for w in query.split() if len(w) > 2}
+                
+                # Check if query contains a known tag
+                matching_tags = query_words & tech_tags
+                if matching_tags:
+                    tag = matching_tags.pop()
+                elif 'artificial' in query_words or 'intelligence' in query_words:
+                    tag = 'ai'
+                elif 'machine' in query_words or 'learning' in query_words:
+                    tag = 'machinelearning'
+            
+            if tag:
+                params["tag"] = tag
             
             response = await self.http.get("https://dev.to/api/articles", params=params)
             response.raise_for_status()
             articles = response.json()
             
             docs = []
+            # Extract keywords for loose filtering
+            query_keywords = set()
+            if query and not tag:
+                query_keywords = {w.lower() for w in query.split() if len(w) > 2 and w.lower() not in {'the', 'and', 'for', 'with'}}
+            
             for article in articles[:max_results]:
-                # Filter by query in title/description if not using tag
-                if " " in query:
+                # Loose keyword filtering if no tag was used
+                if query_keywords:
                     searchable = f"{article.get('title', '')} {article.get('description', '')}".lower()
-                    if query.lower() not in searchable:
+                    searchable_words = set(searchable.split())
+                    if not (query_keywords & searchable_words):
                         continue
                 
                 docs.append(
@@ -1476,7 +1505,11 @@ class RSSFeedClient(HttpSourceClient):
         """Fetch and aggregate articles from RSS feeds."""
         try:
             all_docs = []
-            query_lower = query.lower()
+            
+            # Extract keywords for better filtering
+            query_keywords = set()
+            if query:
+                query_keywords = {w.lower() for w in query.split() if len(w) > 3 and w.lower() not in {'the', 'and', 'for', 'with', 'this', 'that', 'from'}}
             
             for feed_url in self.FEED_URLS:
                 try:
@@ -1484,10 +1517,13 @@ class RSSFeedClient(HttpSourceClient):
                     feed = feedparser.parse(response.text)
                     
                     for entry in feed.entries[:20]:  # Max 20 per feed
-                        # Filter by query
-                        searchable = f"{entry.get('title', '')} {entry.get('summary', '')}".lower()
-                        if query and query_lower not in searchable:
-                            continue
+                        # More flexible keyword-based filtering
+                        if query_keywords:
+                            searchable = f"{entry.get('title', '')} {entry.get('summary', '')}".lower()
+                            searchable_words = set(searchable.split())
+                            # Match if ANY keyword is found
+                            if not (query_keywords & searchable_words):
+                                continue
                         
                         pub_date = entry.get("published") or entry.get("updated")
                         if pub_date:
@@ -1627,13 +1663,19 @@ class KDnuggetsClient(HttpSourceClient):
             feed = feedparser.parse(response.text)
             
             docs = []
-            query_lower = query.lower() if query else ""
+            
+            # Extract keywords for flexible matching
+            query_keywords = set()
+            if query:
+                query_keywords = {w.lower() for w in query.split() if len(w) > 3 and w.lower() not in {'the', 'and', 'for', 'with', 'this', 'that'}}
             
             for entry in feed.entries:
-                # Loose filter - only skip if very specific query doesn't match
-                if query and len(query.split()) > 2:
+                # Very loose filter - match any keyword or return all if generic query
+                if query_keywords and len(query_keywords) > 1:
                     searchable = f"{entry.get('title', '')} {entry.get('summary', '')}".lower()
-                    if query_lower not in searchable:
+                    searchable_words = set(searchable.split())
+                    # Match if at least one keyword is found
+                    if not (query_keywords & searchable_words):
                         continue
                 
                 # Parse publication date
@@ -1696,13 +1738,19 @@ class AIWeeklyClient(HttpSourceClient):
             feed = feedparser.parse(response.text)
             
             docs = []
-            query_lower = query.lower() if query else ""
+            
+            # Extract keywords for flexible matching
+            query_keywords = set()
+            if query:
+                query_keywords = {w.lower() for w in query.split() if len(w) > 3 and w.lower() not in {'the', 'and', 'for', 'with', 'this', 'that'}}
             
             for entry in feed.entries:
-                # Loose filter - only skip if very specific query doesn't match
-                if query and len(query.split()) > 2:
+                # Very loose filter - match any keyword or return all if generic query
+                if query_keywords and len(query_keywords) > 1:
                     searchable = f"{entry.get('title', '')} {entry.get('summary', '')}".lower()
-                    if query_lower not in searchable:
+                    searchable_words = set(searchable.split())
+                    # Match if at least one keyword is found
+                    if not (query_keywords & searchable_words):
                         continue
                 
                 # Parse publication date
@@ -2120,13 +2168,20 @@ class ProductHuntClient(HttpSourceClient):
             docs = []
             edges = data.get("data", {}).get("posts", {}).get("edges", [])
             
+            # Extract keywords from query for better matching
+            query_keywords = set()
+            if query:
+                query_keywords = {w.lower() for w in query.split() if len(w) > 2 and w.lower() not in {'the', 'and', 'for', 'with', 'latest', 'new'}}
+            
             for edge in edges:
                 node = edge.get("node", {})
                 
-                # Filter by query if provided
-                if query:
+                # More flexible filtering - match any keyword or skip if no specific query
+                if query_keywords:
                     searchable = f"{node.get('name', '')} {node.get('tagline', '')} {node.get('description', '')}".lower()
-                    if query.lower() not in searchable:
+                    searchable_words = set(searchable.split())
+                    # Match if any keyword is found
+                    if not (query_keywords & searchable_words):
                         continue
                 
                 topics = [t.get("node", {}).get("name", "") for t in node.get("topics", {}).get("edges", [])]
