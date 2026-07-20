@@ -124,9 +124,9 @@ class SemanticScholarClient(HttpSourceClient):
                 current_time = time.time()
                 time_since_last = current_time - SemanticScholarClient._last_request_time
                 
-                # If less than 2 seconds have passed, wait (increased buffer)
-                if time_since_last < 2.0:
-                    await asyncio.sleep(2.0 - time_since_last)
+                # If less than 3 seconds have passed, wait (increased buffer to avoid 429)
+                if time_since_last < 3.0:
+                    await asyncio.sleep(3.0 - time_since_last)
                 
                 response = await self.http.get(
                     "https://api.semanticscholar.org/graph/v1/paper/search",
@@ -1536,10 +1536,16 @@ class TowardsDataScienceClient(HttpSourceClient):
     source_type = "blog"
 
     def __init__(self, http: httpx.AsyncClient, settings: Settings) -> None:
-        super().__init__(http, enabled_without_key=True)
+        # Disabled due to Medium blocking automated RSS access (403 Forbidden)
+        super().__init__(http, enabled_without_key=False)
 
     async def fetch(self, query: str, *, max_results: int, domain: str | None = None) -> FetchResult:
         """Fetch articles from Towards Data Science via Medium RSS."""
+        return FetchResult(
+            source_name=self.name,
+            error="Disabled: Medium blocks automated RSS access (403 Forbidden)"
+        )
+        # Legacy code (disabled):
         try:
             # Towards Data Science RSS feed
             response = await self.http.get(
@@ -1738,25 +1744,40 @@ class GDELTClient(HttpSourceClient):
     name = "GDELT"
     route_name = "gdelt"
     source_type = "news"
+    _last_request_time: float = 0.0
+    _lock = asyncio.Lock()
 
     def __init__(self, http: httpx.AsyncClient, settings: Settings) -> None:
         super().__init__(http, enabled_without_key=True)
 
     async def fetch(self, query: str, *, max_results: int, domain: str | None = None) -> FetchResult:
-        """Search GDELT for news articles."""
+        """Search GDELT for news articles with rate limiting."""
         try:
-            params = {
-                "query": query,
-                "mode": "artlist",
-                "maxrecords": min(max_results, 250),
-                "format": "json",
-            }
+            # Use class-level lock to prevent rate limiting (429 Too Many Requests)
+            async with self._lock:
+                import time
+                current_time = time.time()
+                time_since_last = current_time - GDELTClient._last_request_time
+                
+                # Wait 3 seconds between requests to avoid rate limits
+                if time_since_last < 3.0:
+                    await asyncio.sleep(3.0 - time_since_last)
+                
+                params = {
+                    "query": query,
+                    "mode": "artlist",
+                    "maxrecords": min(max_results, 250),
+                    "format": "json",
+                }
+                
+                response = await self.http.get(
+                    "https://api.gdeltproject.org/api/v2/doc/doc",
+                    params=params,
+                    timeout=30.0
+                )
+                
+                GDELTClient._last_request_time = time.time()
             
-            response = await self.http.get(
-                "https://api.gdeltproject.org/api/v2/doc/doc",
-                params=params,
-                timeout=30.0
-            )
             response.raise_for_status()
             data = response.json()
             

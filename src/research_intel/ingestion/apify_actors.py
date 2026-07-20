@@ -94,8 +94,13 @@ class SoonToOpenBusinessesClient(ApifyActorClient):
 
 
 class GoogleTrendsScraperClient(ApifyActorClient):
-    """Google Trends scraper for trending topics and search interest data."""
+    """Google Trends scraper - DISABLED (Apify actor returns 404)"""
     name = "Google Trends"; route_name = "google_trends"; source_type = "news"; actor_id = "trudax/google-trends-scraper"
+    
+    def __init__(self, http: httpx.AsyncClient, settings: Settings) -> None:
+        # Disabled: Actor returns 404 - may be deprecated or removed
+        super().__init__(http, settings)
+        self.api_key = None  # Force disabled
     async def build_input(self, query, max_results):
         return {
             "searchTerms": [query],
